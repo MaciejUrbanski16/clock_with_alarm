@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
-
+#define CHANGE 25
 using namespace std;
 
+
+usigned int step = 0;
 class Log
 {
 	private:
