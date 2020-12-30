@@ -12,6 +12,7 @@
 #include "stm32f1xx.h"
 #include "stm32f1xx_nucleo.h"
 			
+#include "lcd_init.h"
 
 int main(void)
 {
