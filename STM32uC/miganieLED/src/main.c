@@ -13,6 +13,7 @@
 #include "stm32f1xx_nucleo.h"
 			
 #include "lcd_init.h"
+#include "timers_init.h"
 
 int main(void)
 {
