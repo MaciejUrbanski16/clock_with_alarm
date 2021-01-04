@@ -17,9 +17,9 @@
 
 #include "lcd_init.h"
 #include "timers_init.h"
-//#include "alarm.h"
 
-//conteners to storage data of time and alarm
+
+//containers to storage data of time and alarm
 
 char outHour[9];
 char outDate[9];
@@ -35,30 +35,6 @@ enum{
 };
 
 
-//aktualny tryb pracy zegara
-/*extern volatile uint8_t mode;// = RUNNING_MODE;
-
-//zmienne do sygnalizacji dzwiekowej tuz po zmianie trybu
-extern volatile uint8_t beepAfterChanging;// = 0;
-extern volatile uint8_t counterOfBeep;// = 0;
-
-
-extern volatile uint8_t hourOfAlarm;// = 5;
-extern volatile uint8_t minOfAlarm;// = 30;
-extern volatile uint8_t secOfAlarm;// = 0;
-
-
-
-//flaga sprawdzajaca czy alarm jest aktualnie ustawiony
-extern volatile uint8_t alarmIsSet;// = 0;
-extern volatile uint16_t automaticSilenceOfAlarm;// = 0;
-extern volatile uint8_t alarmTriggered;// =0;
-extern volatile uint8_t alarmIsSetToShow;// =0;
-
-//flagi do wyzwolenia pikania w alarmie
-extern volatile uint16_t beepsOfAlarm;// = 0;
-extern volatile uint8_t directionOfBeeps;// = 0;*/
-
 volatile uint8_t hour = 23;
 volatile uint8_t min = 59;
 volatile uint8_t sec = 57;
@@ -72,42 +48,54 @@ volatile uint8_t secOfAlarm = 0;
 
 
 
- //aktualny tryb pracy zegara
+ //current mode of clock's work
  volatile uint8_t mode = RUNNING_MODE;
 
- //zmienne do sygnalizacji dzwiekowej tuz po zmianie trybu
+ //variables that sign beeps after changing mode
 volatile uint8_t beepAfterChanging = 0;
 volatile uint8_t counterOfBeep = 0;
 
 
- //flaga sprawdzajaca czy alarm jest aktualnie ustawiony
+ //flag to check if alarm is set
  volatile uint8_t alarmIsSet= 0;
+
+ //variables that are responsible for alarm trigger
  volatile uint16_t automaticSilenceOfAlarm = 0;
  volatile uint8_t alarmTriggered =0;
  volatile uint8_t alarmIsSetToShow=0;
 
- //flagi do wyzwolenia pikania w alarmie
+ //flag that is responsible for triggering beeps
  volatile uint16_t beepsOfAlarm= 0;
+
+ //flag that is responsible for state of beeps (first four fast beeps and then
+ //silence during the same time as all four fast beeps
  volatile uint8_t directionOfBeeps = 0;
 
 
-//funkcja do obslugi przerwnia zewnetrznego od klawiszy pinow 2,3,4,5
 
 
-volatile uint8_t pushes = 0;//zmienna sprawzaj¹ca ile czasu trwa juz wcisniecie przycisku
+//volatile uint8_t pushes = 0;//zmienna sprawzaj¹ca ile czasu trwa juz wcisniecie przycisku
 
 
-
+//variable to configure inputs/outputs of microcontroller
 GPIO_InitTypeDef gpio;
+
+
 
 void buttonsInit(void){
 	//konfiguracja przyciskow do ustawiania godziny i daty i alarmu (umiejscowione na porcie B
-	gpio.Mode = GPIO_MODE_INPUT;//piny jako wejœcia
-	gpio.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_8|GPIO_PIN_9; //piny 5,6,8 pos³u¿a do ustawiania czasu, (pin 9 do zmiany stanu
+	//configuration buttons to setting hour of alarm, actual hour and actual date
+	gpio.Mode = GPIO_MODE_INPUT;//pins as inputs
+	gpio.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_8|GPIO_PIN_9;
+	//pins 5,6,8 will be responsible for setting:
+	//time of alarm in SETTING_ALARM_MODE,
+	//actual time in SETTING_HOUR_MODE,
+	//actual date in SETTING_DATE_MODE,
+	//pin number 9 will be responsible for switching between modes
 	gpio.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOC, &gpio);
 
-	gpio.Pin = GPIO_PIN_10; //konfiguracja pinu jako wyjscia dla buzzera
+	gpio.Pin = GPIO_PIN_10; //pin number 10 as output to buzzer
 	gpio.Mode = GPIO_MODE_OUTPUT_PP;
 	gpio.Pull = GPIO_NOPULL;
 	gpio.Speed = GPIO_SPEED_FREQ_LOW;
@@ -115,7 +103,10 @@ void buttonsInit(void){
 }
 
 
+//preparing values of alarm time to displaying depend on actual mode
 void alarmTimeToDisplay(){
+
+	//when alarm is inactive, there is no time of alarm
 	if(alarmIsSet == 0 && mode == RUNNING_MODE){
 		alarmTime[0] = '-';
 		alarmTime[1] = '-';
@@ -127,8 +118,11 @@ void alarmTimeToDisplay(){
 		alarmTime[7] = '-';
 		//alarmTime[8] = '-';
 	}
+
+	//when alarm is active, there is time of alarm
 	else if(alarmIsSet == 1 && mode == RUNNING_MODE){
-		//zamiana pszczegolnych wartoœci godziny w ci¹g znakow w formacie hh:mm:ss
+
+		//converting values of time to hh:mm::ss format
 		uint8_t jednH = hourOfAlarm%10;
 		uint8_t dzH = (hourOfAlarm -jednH)/10;
 
@@ -171,7 +165,8 @@ void alarmTimeToDisplay(){
 
 
 
-//sprawdza poprawnosc aktualnej godziny i daty oraz modyfikuje odpowiednie wartoœci adekwatnie do obecnego czaasu
+//check if values of hours and date are correct,
+//change them when overflow will occur
 void checkIfCorrectValuesOfDate(){
 	if(sec>=60){
 		sec = 0;
@@ -221,8 +216,8 @@ void checkIfCorrectValuesOfDate(){
 }
 void checkIfCorrectValuesAfterSetting(){
 
-	//sprawdzenie cxzy w czasie ustawiania godziny i daty przez uzytkownika
-	//nie zosta³y przekroczone zakresy poszczególnych danych
+	//check values of time and date after setting them by user
+	//change them when overflow will occur
 
 	if(sec >= 60)sec = 0;
 	if(min >= 60)min = 0;
@@ -242,7 +237,7 @@ void checkIfCorrectValuesAfterSetting(){
 
 void dateToDisplay()
 {
-	//zamiana poszczególnych wartoœci daty na ci¹g znaków w formacie dd.mm.rr
+	//preparing date to display in dd.mm.yy format
     uint8_t jednD = day%10;
     uint8_t dzD = (day-jednD)/10;
 
@@ -264,7 +259,7 @@ void dateToDisplay()
 
 void hourToDisplay(){
 
-	//zamiana pszczegolnych wartoœci godziny w ci¹g znakow w formacie hh:mm:ss
+	//preparing actual time to display in hh:mm:ss format
 	uint8_t jednH = hour%10;
 	uint8_t dzH = (hour -jednH)/10;
 
@@ -289,32 +284,36 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 }
 
+//interrupt service routine from timer 2
 void TIM2_IRQHandler(void)
 {
 	HAL_TIM_IRQHandler(&tim2);
 }
 
+//interrupt service routine from timer 3
 void TIM3_IRQHandler(void)
 {
 	HAL_TIM_IRQHandler(&tim3);
 }
 
+//interrupt service routine from timer 4
 void TIM4_IRQHandler(void)
 {
 	HAL_TIM_IRQHandler(&tim4);
 }
 
-//procedura obs³ugi przerwañ od timerów
+////interrupt service routine call when timer2, timer 3 or timer 4 will report interrupt
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 
-	//push = 0;
 
 	if(htim->Instance == TIM2){
-		//tutaj bedzie implementacja funkcji wywo³ywanej co przerwanie timera TIM2 czyli co 1s zwieksza liczbe sekund o 1
+
+		//every second is interrupt from timer 2 and actual tiem is refreshed and displayed
 
 		sec++;
 
+		//check if now is time to trigger the alarm
 		if(mode == RUNNING_MODE){
 
 			if((alarmIsSet==1 )){
@@ -352,29 +351,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 		}
 
-
+		//if now is time to trgger alarm - trigger alarm
 		if(alarmIsSet == 1 &&hour == hourOfAlarm &&min == minOfAlarm && sec == secOfAlarm){
 
-			//HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_SET);
 			alarmTriggered = 1;
 		}
 
 		if(alarmTriggered == 1 && HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_5) ==GPIO_PIN_RESET ){
 
 			alarmTriggered = 0;
-			//HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_RESET);
 		}
 
 
 
 	}
 
-	//refactor po testach!!!
+
 	else if(htim->Instance == TIM3){
 
 
 		 if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_5) == GPIO_PIN_RESET){
-
+			 //depending on mode and pressed button proper value is changed
+			 //and refreshed actual state of lcd display
 			switch(mode){
 			case SETTING_ALARM_MODE:
 				hourOfAlarm++;
@@ -488,14 +486,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 	}
 	else if(htim->Instance == TIM4){
-		//sprawdzenie wcisniêcia konkretnego przycisku co 200ms w trakcie przerwania od TIM4
-		//i nastawa odpowiednich wartoœci przy odpowiednim naciœniêtym przycisku
+	    //interrupt from timer 4 checks every 20ms if configuration button is pressed to eliminate bounce
 		if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9) == GPIO_PIN_RESET){
-			//prze³aczanie trybów za pomoca 4. przycisku PC8
+
 			pushes++;
 			if(pushes == 20){
-				//przytrzymanie przycisku
-				//jesli wcisniecie przycisku 4. trwa juz20*40ms= 800ms to zmien odpowiednio tryb
+				//if button is hold by 20*40ms = 800ms -> change mode to next mode
+
 
 				switch(mode){
 				case RUNNING_MODE:
@@ -543,24 +540,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 				default:
 					break;
 				}
+
+
 				pushes = 0;
 				beepAfterChanging = 1;
 
 			}
 
 			if((pushes<20) && HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9) == GPIO_PIN_SET){
-				//krotkie wcisniecie powoduje natychmiastowy powrot do trybu wyswietlania godziny
+				//if holding this button is shorter than 800ms -> return to ACTUAL_TIME_MODE
 				mode = RUNNING_MODE;
 				pushes = 0;
 			}
 
 		}
-		//wyzwolenie dzwieku oznaczaj¹cego zmiane trybu
-		//sprawdzenie aby nie bylo kolizji z sygnalem generowanym w momencie alarmu
+		//triggering beep after changing mode
+		//checking if the alarm is not triggered now
 		if(beepAfterChanging ==1 && counterOfBeep <=10 &&alarmTriggered == 0){
-			//tuz po zmianie trybu sygnalizacja dzwiekowa zminionego trybu na 10*20ms = 200ms
+			//as soon as user change mode short beep will occur 10*20ms = 200ms
 			counterOfBeep++;
-			//jakby coc to tu zakomentowac
 			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_SET);
 		}
 		if(counterOfBeep == 10 && beepAfterChanging == 1&& alarmTriggered == 0){
@@ -570,8 +568,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		}
 
 
-		//wyzwolenie alarmu jako pikanie
-		//sparawdzanie aby nie bylo kolizji z sygnalem wyzwalanym w momencie zmiany trybu
+		//triggering alarm as four fast beeps and pause which during the same time as the four fast beeps
+		//until user will not silent it or two minutes will elapse without reaction of user
+
 		if(alarmTriggered == 1 && directionOfBeeps == 0 &&beepAfterChanging ==0 ){
 			if(beepsOfAlarm %2 == 0){//zeby zbyt szybko nie pika³ to pikniecie ustawione na co drugie wystapienie przerwania od timera
 				HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_10);
@@ -583,7 +582,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 			}
 		}
 		//
-		//odpowiednia flaga kierunku(czy wystepuja pipipipi czy jest ------->pauza)dla sygna³u z alarmu
+		//proper flag of "direction"(whether is pipipipi or ------->pause) for alarm's beeps
 		if(directionOfBeeps == 1 && alarmTriggered == 1 &&beepAfterChanging == 0){
 			HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_RESET);
 			beepsOfAlarm--;
@@ -602,11 +601,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 int main(void) {
 
 
-	SystemCoreClock = 8000000; // taktowanie 8Mhz
+	SystemCoreClock = 8000000; // clock 8Mhz
 
 	HAL_Init();
 
-	//inicjalizacja zegarów dla poszczególnych modu³ów
+	//initialization of clocks for modules
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -617,28 +616,31 @@ int main(void) {
 	__HAL_RCC_TIM4_CLK_ENABLE();
 
 
-	//inicjalizacja pinów i interface'u SPI dla wyswietlacza lcd
+	//initialization pins and interface SPI for lcd display
 	lcdInit();
 
 	lcd_setup();
 
-	//w³aczenie timera 2 z przerwaniem co 1s
+	//activation of timer 2 with interruption every 1s
 	tim2Init();
 
-	//wlaczenie timera 3 z przerwaniem co 200ms
+	//activation of timer 3 with interruption every 20ms
 	tim3Init();
 
-	//wlaczenie timera 4 z przerwaniem co 40ms
+	//activation of timer 4 with interruption every 40ms
 	tim4Init();
 
-
+	//activation of pins for buttons
 	buttonsInit();
 
-	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_RESET);//buzzer wy³aczony
+	//turning off the buzzer
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,GPIO_PIN_RESET);
 
 	while (1)
 	{
-		//
+		//main loop of program is empty
+		//every action is based on internal microcontroller's timers
+		//microcontroller does not have to check any if statement every loop iteration
 	}
 }
 
