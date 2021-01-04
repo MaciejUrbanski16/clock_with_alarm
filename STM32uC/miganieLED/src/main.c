@@ -19,12 +19,14 @@
 #include "timers_init.h"
 //#include "alarm.h"
 
-//kontenery do przechowania godziny i daty i godziny alarmu do wyswietlenia
+//conteners to storage data of time and alarm
+
 char outHour[9];
 char outDate[9];
 char alarmTime[9];
 
-//wyszczególenienie trybow pracy zegara
+//modes of clock's work
+
 enum{
 	RUNNING_MODE,
 	SETTING_HOUR_MODE,
@@ -69,10 +71,6 @@ volatile uint8_t minOfAlarm = 30;
 volatile uint8_t secOfAlarm = 0;
 
 
-
- //volatile uint8_t hourOfAlarm = 5;
-// volatile uint8_t minOfAlarm = 30;
-// volatile uint8_t secOfAlarm = 0;
 
  //aktualny tryb pracy zegara
  volatile uint8_t mode = RUNNING_MODE;
