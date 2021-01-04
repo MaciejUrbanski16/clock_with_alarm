@@ -26,7 +26,7 @@ GPIO_InitTypeDef gpio;
 static uint8_t lcd_buffer[LCD_BUFFER_SIZE];
 
 void lcdInit(void){
-	//porty we/wy dedykowane dla transmisji danych do wyœwietlacza
+	//input/output to trasfer data to lcd display
 
 	gpio.Mode = GPIO_MODE_AF_PP;
 	gpio.Pin = GPIO_PIN_5 | GPIO_PIN_7;		// SCK, MOSI
@@ -43,7 +43,7 @@ void lcdInit(void){
 	HAL_GPIO_Init(GPIOC, &gpio);
 	HAL_GPIO_WritePin(GPIOC, LCD_CE | LCD_RST, GPIO_PIN_SET);
 
-	//konfuguracja interface'u SPI dla przesy³u danych do wyœwietlacza
+	//configuration of SPI interface
 	spi.Instance = SPI1;
 	spi.Init.Mode = SPI_MODE_MASTER;
 	spi.Init.NSS = SPI_NSS_SOFT;
@@ -85,10 +85,10 @@ void lcd_clear(void)
 	memset(lcd_buffer, 0, LCD_BUFFER_SIZE);
 }
 
-void lcd_draw_bitmap(const uint8_t* data)
+/*void lcd_draw_bitmap(const uint8_t* data)
 {
 	memcpy(lcd_buffer, data, LCD_BUFFER_SIZE);
-}
+}*/
 
 void lcd_draw_text(int row, int col, const char* text)
 {

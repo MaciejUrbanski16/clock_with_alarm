@@ -73,8 +73,8 @@ volatile uint8_t counterOfBeep = 0;
 
 
 
-
-//volatile uint8_t pushes = 0;//zmienna sprawzaj¹ca ile czasu trwa juz wcisniecie przycisku
+//variable to check how long button is pressed
+volatile uint8_t pushes = 0;
 
 
 //variable to configure inputs/outputs of microcontroller
@@ -83,7 +83,7 @@ GPIO_InitTypeDef gpio;
 
 
 void buttonsInit(void){
-	//konfiguracja przyciskow do ustawiania godziny i daty i alarmu (umiejscowione na porcie B
+
 	//configuration buttons to setting hour of alarm, actual hour and actual date
 	gpio.Mode = GPIO_MODE_INPUT;//pins as inputs
 	gpio.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_8|GPIO_PIN_9;
@@ -309,7 +309,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 	if(htim->Instance == TIM2){
 
-		//every second is interrupt from timer 2 and actual tiem is refreshed and displayed
+		//every second is interrupt from timer 2 and actual time is refreshed and displayed
 
 		sec++;
 
@@ -351,7 +351,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 		}
 
-		//if now is time to trgger alarm - trigger alarm
+		//if now is time to trigger alarm - trigger alarm
 		if(alarmIsSet == 1 &&hour == hourOfAlarm &&min == minOfAlarm && sec == secOfAlarm){
 
 			alarmTriggered = 1;
@@ -486,7 +486,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 	}
 	else if(htim->Instance == TIM4){
-	    //interrupt from timer 4 checks every 20ms if configuration button is pressed to eliminate bounce
+	    //interrupt from timer 4 checks every 40ms if configuration button is pressed to eliminate bounce
 		if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_9) == GPIO_PIN_RESET){
 
 			pushes++;
@@ -572,7 +572,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		//until user will not silent it or two minutes will elapse without reaction of user
 
 		if(alarmTriggered == 1 && directionOfBeeps == 0 &&beepAfterChanging ==0 ){
-			if(beepsOfAlarm %2 == 0){//zeby zbyt szybko nie pika³ to pikniecie ustawione na co drugie wystapienie przerwania od timera
+			if(beepsOfAlarm %2 == 0){
+				//beeps should be as long as two period interrupts from timer 4
+
 				HAL_GPIO_TogglePin(GPIOC,GPIO_PIN_10);
 			}
 			beepsOfAlarm++;

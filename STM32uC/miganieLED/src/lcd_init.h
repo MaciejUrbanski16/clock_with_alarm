@@ -24,7 +24,7 @@ void lcdInit(void);
 void lcd_setup(void);
 
 void lcd_clear(void);
-void lcd_draw_bitmap(const uint8_t* data);
+//void lcd_draw_bitmap(const uint8_t* data);
 void lcd_draw_text(int row, int col, const char* text);
 
 void lcd_copy(void);

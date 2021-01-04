@@ -11,19 +11,16 @@
 
 
 
-TIM_HandleTypeDef tim2; // trzeba co 1s przerwanie od timera
-						//w tym przerwaniu ziekszymy wartoœc sekund o 1
+TIM_HandleTypeDef tim2; //interrupt every 1s
 
-TIM_HandleTypeDef tim3; //przerwanie od timera co 50ms w celu sprawdzenia stanu
-						//przycisku konfiguracyjnego (eliminacja drgañ stykow)
+TIM_HandleTypeDef tim3; //interrupt every 200ms
 
-TIM_HandleTypeDef tim4; //przerwanie od timera co 50ms w celu sprawdzenia stanu
-						//przycisku konfiguracyjnego (eliminacja drgañ stykow)
+TIM_HandleTypeDef tim4; //interrupt every 40ms
 void tim2Init(void){
 
-	//konfiguracja timera TIM2 tak aby co 1s wywo³ywa³ przerwanie
+	//configuration timer 2 to call interrupt every 1s
 	tim2.Instance = TIM2;
-	tim2.Init.Period = 1000 - 1;
+	tim2.Init.Period = 1000 - 1; //1s to overflow counter
 	tim2.Init.Prescaler = 8000 - 1;
 	tim2.Init.ClockDivision = 0;
 	tim2.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -31,16 +28,15 @@ void tim2Init(void){
 	tim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 	HAL_TIM_Base_Init(&tim2);
 
-	HAL_NVIC_EnableIRQ(TIM2_IRQn);//odblokowanie przerwan od timera TIM2
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);//enable timer 2 interrupts
 	HAL_TIM_Base_Start_IT(&tim2);
 
 }
 void tim3Init(void){
 
-	//konfiguracja timera TIM3 tak aby co 200ms sprawdza³ stan przyciskow (eliminacja drgan stykow) i  w zale¿noœci
-	//od trybu inkrementowa³ odpowiedni¹ wartoœc.
+	//configuration of timer 3 to call interrupt every 200ms
 	tim3.Instance = TIM3;
-	tim3.Init.Period = 200-1; //doliczy do 200ms po czym sprawdzi stan przyciskow
+	tim3.Init.Period = 200-1; //after 200ms overflow and interrupt
 	tim3.Init.Prescaler = 8000-1;
 	tim3.Init.ClockDivision = 0;
 	tim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -48,17 +44,16 @@ void tim3Init(void){
 	tim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 	HAL_TIM_Base_Init(&tim3);
 
-	HAL_NVIC_EnableIRQ(TIM3_IRQn);//odblokowanie przerwan od timera TIM3
+	HAL_NVIC_EnableIRQ(TIM3_IRQn);//enable interrupts from timer 3
 	HAL_TIM_Base_Start_IT(&tim3);
 
 
 }
 void tim4Init(void){
 
-	//konfiguracja timera TIM4 tak aby co 40ms sprawdza³ stan przyciskow (eliminacja drgan stykow) i  w zale¿noœci
-	//od trybu inkrementowa³ odpowiedni¹ wartoœc.
+	//configuration of timer 4 to call interrupt every 40ms
 	tim4.Instance = TIM4;
-	tim4.Init.Period = 40-1; //doliczy do 40ms po czym sprawdzi stan przyciskow
+	tim4.Init.Period = 40-1; //after 40ms overflow and interruapt
 	tim4.Init.Prescaler = 8000-1;
 	tim4.Init.ClockDivision = 0;
 	tim4.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -66,7 +61,7 @@ void tim4Init(void){
 	tim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 	HAL_TIM_Base_Init(&tim4);
 
-	HAL_NVIC_EnableIRQ(TIM4_IRQn);//odblokowanie przerwan od timera TIM4
+	HAL_NVIC_EnableIRQ(TIM4_IRQn);//enable interrupts from timer 4
 	HAL_TIM_Base_Start_IT(&tim4);
 
 }
